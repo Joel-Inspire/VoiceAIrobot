@@ -194,14 +194,12 @@ class GptService extends EventEmitter {
         refusal: null,
       }; // Final object to store content and tool call details
 
-      let lastContentChunk = ""; // To store the last content chunk received
-      let contentPending = false; // Flag to track if there's content pending to be emitted
       let currentToolCallId = null; // To store the ID of the active tool call
 
       for await (const chunk of response) {
         const { choices } = chunk;
 
-        // Log each chunk as it comes in
+        //Log each chunk as it comes in
         // this.log(`[GptService] Chunk received: ${JSON.stringify(chunk)}`);
 
         // Check if tool_calls are present in this chunk (could be part of multiple chunks)
@@ -210,16 +208,50 @@ class GptService extends EventEmitter {
 
           // Check if this is a new tool call (only when an ID is present)
           if (toolCall.id && toolCall.id !== currentToolCallId) {
+            // Check if currentToolCallId is not null, indicating a subsequent tool call
+            const isFirstToolCall = currentToolCallId === null;
+
             currentToolCallId = toolCall.id;
 
             // Initialize new tool call if not already in the map
             if (!toolCalls[currentToolCallId]) {
+              // this.log(
+              //   `[GptService] Final Content of this tool call: ${contentAccumulator}`
+              // );
+
+              if (choices[0]?.delta?.content) {
+                // this.log(
+                //   `[GptService] Last chunk to emit: ${choices[0].delta.content}`
+                // );
+                this.emit(
+                  "gptreply",
+                  choices[0]?.delta?.content,
+                  true,
+                  interactionCount
+                );
+              } else {
+                // this.log(
+                //   `[GptService] Emitting empty string as final content chunk to voxray`
+                // );
+                //If the content is empty (in the case of OpenAI Chat Completions, it will ALWAYS be this) then just send an empty token
+                this.emit("gptreply", "", true, interactionCount);
+              }
+
               //Log the last content to an assistant message (IS THIS AN OPENAI BUG??? For some reason, the finish_reason never is "STOP" and we miss the final punctuation (eg. "One Moment" should be "One Moment." where the period is the final content, but that period is being sent back after the function call completes))
-              if (contentAccumulator.length > 0) {
+              if (contentAccumulator.length > 0 && isFirstToolCall) {
                 this.userContext.push({
                   role: "assistant",
                   content: contentAccumulator.trim(),
                 });
+
+                // // Log the full userContext before making the API call
+                // console.log(
+                //   `[GptService] Full userContext before next tool call id: ${JSON.stringify(
+                //     this.userContext,
+                //     null,
+                //     2
+                //   )}`
+                // );
 
                 this.log(
                   `[GptService] Final GPT -> user context length: ${this.userContext.length}`
@@ -367,7 +399,7 @@ class GptService extends EventEmitter {
             ],
           };
 
-          // Log the payload to the console
+          // //Log the payload to the console
           // console.log(
           //   `[GptService] Completion payload: ${JSON.stringify(
           //     completion_payload,
@@ -395,39 +427,70 @@ class GptService extends EventEmitter {
             // );
 
             // Accumulate the content from each chunk
-            if (choices[0]?.delta?.content) {
-              if (contentPending && lastContentChunk) {
-                this.emit(
-                  "gptreply",
-                  lastContentChunk,
-                  false,
-                  interactionCount
+            if (!choices[0]?.delta?.tool_calls) {
+              // Check if the current chunk is the last one in the stream
+              if (choices[0].finish_reason === "stop") {
+                this.log(`[GptService] In finish reason === STOP`);
+
+                if (choices[0]?.delta?.content) {
+                  // this.log(
+                  //   `[GptService] Last chunk to emit (non-tool call): ${choices[0].delta.content}`
+                  // );
+                  this.emit(
+                    "gptreply",
+                    choices[0]?.delta?.content,
+                    true,
+                    interactionCount
+                  );
+                  //accumulate the final content chunk before pushing to user context
+                  finalContentAccumulator += choices[0].delta.content;
+                } else {
+                  // this.log(
+                  //   `[GptService] Emitting empty string as final content chunk (non-tool call) to voxray`
+                  // );
+                  //If the content is empty (in the case of OpenAI Chat Completions, it will ALWAYS be this) then just send an empty token
+                  this.emit("gptreply", "", true, interactionCount);
+                }
+                // if (lastContentChunk) {
+                //   this.emit("gptreply", lastContentChunk, true, interactionCount);
+                // }
+
+                this.userContext.push({
+                  role: "assistant",
+                  content: finalContentAccumulator.trim(),
+                });
+
+                // Log the full userContext before making the API call
+                // console.log(
+                //   `[GptService] Full userContext after tool call: ${JSON.stringify(
+                //     this.userContext,
+                //     null,
+                //     2
+                //   )}`
+                // );
+
+                this.log(
+                  `[GptService] Final GPT -> user context length: ${this.userContext.length}`
                 );
+
+                break; // Exit the loop once the final response is complete
+              } else {
+                //We only will start emitting chunks after the chunk with ROLE defined "delta":{"role":"assistant","content":"","refusal":null} because there is no content here
+                if (!choices[0]?.delta?.role && choices[0]?.delta?.content) {
+                  // this.log(
+                  //   `[GptService] Emitting intermediary chunk (tool call): ${choices[0].delta.content}`
+                  // );
+                  //emit the chunk knowing its a content chunk and not the final one
+                  this.emit(
+                    "gptreply",
+                    choices[0].delta.content,
+                    false,
+                    interactionCount
+                  );
+                  //continue accumulating content chunks
+                  finalContentAccumulator += choices[0].delta.content;
+                }
               }
-
-              lastContentChunk = choices[0].delta.content;
-              finalContentAccumulator += lastContentChunk;
-              contentPending = true;
-            }
-
-            // Handle 'finish_reason' to detect the end of streaming
-            if (choices[0].finish_reason === "stop") {
-              // this.log(`[GptService] Final response STOP detected`);
-
-              if (lastContentChunk) {
-                this.emit("gptreply", lastContentChunk, true, interactionCount);
-              }
-
-              // Push the final accumulated content into userContext
-              this.userContext.push({
-                role: "assistant",
-                content: finalContentAccumulator.trim(),
-              });
-
-              this.log(
-                `[GptService] Final GPT -> user context length: ${this.userContext.length}`
-              );
-              break; // Exit the loop once the final response is complete
             }
           }
           // Reset tool call state after completion
@@ -439,45 +502,84 @@ class GptService extends EventEmitter {
             if (choices[0]?.delta?.tool_calls[0]?.function?.arguments) {
               toolCalls[currentToolCallId].arguments +=
                 choices[0].delta.tool_calls[0].function.arguments;
-              this.log(
-                `[GptService] Accumulated arguments for tool call ${currentToolCallId}: ${toolCalls[currentToolCallId].arguments}`
-              );
+              // this.log(
+              //   `[GptService] Accumulated arguments for tool call ${currentToolCallId}: ${toolCalls[currentToolCallId].arguments}`
+              // );
             }
           }
         }
 
         // Handle non-tool_call content chunks
-        if (choices[0]?.delta?.content) {
-          if (contentPending && lastContentChunk) {
-            this.emit("gptreply", lastContentChunk, false, interactionCount);
+        if (!choices[0]?.delta?.tool_calls) {
+          // Check if the current chunk is the last one in the stream
+          if (choices[0].finish_reason === "stop") {
+            this.log(`[GptService] In finish reason === STOP`);
+
+            if (choices[0]?.delta?.content) {
+              // this.log(
+              //   `[GptService] Last chunk to emit (non-tool call): ${choices[0].delta.content}`
+              // );
+              this.emit(
+                "gptreply",
+                choices[0]?.delta?.content,
+                true,
+                interactionCount
+              );
+              //accumulate the final content chunk before pushing to user context
+              contentAccumulator += choices[0].delta.content;
+            } else {
+              // this.log(
+              //   `[GptService] Emitting empty string as final content chunk (non-tool call) to voxray`
+              // );
+              //If the content is empty (in the case of OpenAI Chat Completions, it will ALWAYS be this) then just send an empty token
+              this.emit("gptreply", "", true, interactionCount);
+            }
+            // if (lastContentChunk) {
+            //   this.emit("gptreply", lastContentChunk, true, interactionCount);
+            // }
+
+            this.userContext.push({
+              role: "assistant",
+              content: contentAccumulator.trim(),
+            });
+
+            // // Log the full userContext before making the API call
+            // console.log(
+            //   `[GptService] Full userContext after non tool call: ${JSON.stringify(
+            //     this.userContext,
+            //     null,
+            //     2
+            //   )}`
+            // );
+
+            this.log(
+              `[GptService] Final GPT -> user context length: ${this.userContext.length}`
+            );
+
+            break; // Exit the loop once the final response is complete
+          } else {
+            //We only will start emitting chunks after the chunk with ROLE defined "delta":{"role":"assistant","content":"","refusal":null} because there is no content here, also need to make sure finish reason isn't a tool call
+            if (!choices[0]?.delta?.role && choices[0]?.delta?.content) {
+              //Log each chunk as it comes in
+              // this.log(
+              //   `[GptService] Emitting intermediary chunk (non tool call): ${choices[0].delta.content}`
+              // );
+              //emit the chunk knowing its a content chunk and not the final one
+              this.emit(
+                "gptreply",
+                choices[0].delta.content,
+                false,
+                interactionCount
+              );
+              //continue accumulating content chunks
+              contentAccumulator += choices[0].delta.content;
+            }
           }
-
-          lastContentChunk = choices[0].delta.content;
-          contentAccumulator += lastContentChunk;
-          contentPending = true;
         }
 
-        if (choices[0]?.delta?.refusal !== null) {
-          finalMessageObject.refusal = choices[0].delta.refusal;
-        }
-
-        // Check if the current chunk is the last one in the stream
-        if (choices[0].finish_reason === "stop") {
-          this.log(`[GptService] In finish reason === STOP`);
-
-          if (lastContentChunk) {
-            this.emit("gptreply", lastContentChunk, true, interactionCount);
-          }
-
-          this.userContext.push({
-            role: "assistant",
-            content: contentAccumulator.trim(),
-          });
-
-          this.log(
-            `[GptService] Final GPT -> user context length: ${this.userContext.length}`
-          );
-        }
+        // if (choices[0]?.delta?.refusal !== null) {
+        //   finalMessageObject.refusal = choices[0].delta.refusal;
+        // }
       }
     } catch (error) {
       this.log(`[GptService] Error during completion: ${error.stack}`);
