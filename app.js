@@ -36,6 +36,7 @@ app.ws('/connection', (ws) => {
     // Filled in from start message
     let streamSid;
     let callSid;
+    let globalInterval;
 
     const gptService = new GptService();
     const streamService = new StreamService(ws);
@@ -71,9 +72,9 @@ app.ws('/connection', (ws) => {
       }
     });
   
-    transcriptionService.on('utterance', async (text) => {
+    transcriptionService.on('utterance', async ({ text, duration, start }) => {  
       // This is a bit of a hack to filter out empty utterances
-      if(marks.length > 0 && text?.length > 5) {
+      if(marks.length > 0 && text?.trim()?.length) {
         console.log('Twilio -> Interruption, Clearing stream'.red);
         ws.send(
           JSON.stringify({
@@ -81,18 +82,26 @@ app.ws('/connection', (ws) => {
             event: 'clear',
           })
         );
+      } else if (duration > 4 && !text?.trim()?.length && !marks.length) {
+        globalInterval = setInterval(() => {
+          console.log('Interval running...');
+        }, 2000); 
+        console.log(`durration=${duration}, start=${start}`.red);
+        ttsService.generate({partialResponseIndex: null, partialResponse: 'sorry! are you there i dont listen anything?'}, ++interactionCount);
       }
     });
   
     transcriptionService.on('transcription', async (text) => {
       if (!text) { return; }
       console.log(`Interaction ${interactionCount} – STT -> GPT: ${text}`.yellow);
+      clearInterval(globalInterval);
       gptService.completion(text, interactionCount);
       interactionCount += 1;
     });
     
     gptService.on('gptreply', async (gptReply, icount) => {
       console.log(`Interaction ${icount}: GPT -> TTS: ${gptReply.partialResponse}`.green );
+      clearInterval(globalInterval);
       ttsService.generate(gptReply, icount);
     });
   
@@ -104,6 +113,7 @@ app.ws('/connection', (ws) => {
   
     streamService.on('audiosent', (markLabel) => {
       marks.push(markLabel);
+      clearInterval(globalInterval);
     });
   } catch (err) {
     console.log(err);

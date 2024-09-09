@@ -15,7 +15,9 @@ class TranscriptionService extends EventEmitter {
       punctuate: true,
       interim_results: true,
       endpointing: 200,
-      utterance_end_ms: 1000
+      utterance_end_ms: 1000,
+      smart_format: true,
+      vad_events: true,
     });
 
     this.finalResult = '';
@@ -44,7 +46,7 @@ class TranscriptionService extends EventEmitter {
         // console.log(text, "is_final: ", transcription?.is_final, "speech_final: ", transcription.speech_final);
         // if is_final that means that this chunk of the transcription is accurate and we need to add it to the finalResult 
         if (transcriptionEvent.is_final === true && text.trim().length > 0) {
-          this.finalResult += ` ${text}`;
+          this.finalResult += ` ${text.trim()}`;
           // if speech_final and is_final that means this text is accurate and it's a natural pause in the speakers speech. We need to send this to the assistant for processing
           if (transcriptionEvent.speech_final === true) {
             this.speechFinal = true; // this will prevent a utterance end which shows up after speechFinal from sending another response
@@ -55,7 +57,12 @@ class TranscriptionService extends EventEmitter {
             this.speechFinal = false;
           }
         } else {
-          this.emit('utterance', text);
+          console.log(`STT -> Deepgram transcription: ${text}`.yellow);
+            this.emit('utterance', {
+              text: text,
+              duration: transcriptionEvent.duration,
+              start: transcriptionEvent.start,
+            });
         }
       });
 
