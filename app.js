@@ -7,7 +7,7 @@ const ExpressWs = require('express-ws');
 const { GptService } = require('./services/gpt-service');
 const { StreamService } = require('./services/stream-service');
 const { TranscriptionService } = require('./services/transcription-service');
-const { TextToSpeechService } = require('./services/tts-service');
+const { TextToSpeechService } = require('./services/tts-service-azure');
 const { recordingService } = require('./services/recording-service');
 
 const VoiceResponse = require('twilio').twiml.VoiceResponse;
@@ -58,7 +58,7 @@ app.ws('/connection', (ws) => {
         // Set RECORDING_ENABLED='true' in .env to record calls
         recordingService(ttsService, callSid).then(() => {
           console.log(`Twilio -> Starting Media Stream for ${streamSid}`.underline.red);
-          ttsService.generate({partialResponseIndex: null, partialResponse: 'Hello! I understand you\'re looking for a pair of AirPods, is that correct?'}, 0);
+          ttsService.generate({partialResponseIndex: null, partialResponse: 'Sveiki! Cik es saprotu, jūs meklējat austiņas, vai tā būtu taisnība?'}, 0);
         });
       } else if (msg.event === 'media') {
         transcriptionService.send(msg.media.payload);

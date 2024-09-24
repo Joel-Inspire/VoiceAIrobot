@@ -4,15 +4,15 @@ const tools = [
     type: 'function',
     function: {
       name: 'checkInventory',
-      say: 'Let me check our inventory right now.',
-      description: 'Check the inventory of airpods, airpods pro or airpods max.',
+      say: 'Ļaujiet man pārbaudīt mūsu krājumus tieši tagad.',
+      description: 'Pārbaudīt AirPods, AirPods Pro vai AirPods Max krājumus.',
       parameters: {
         type: 'object',
         properties: {
           model: {
             type: 'string',
             'enum': ['airpods', 'airpods pro', 'airpods max'],
-            description: 'The model of airpods, either the airpods, airpods pro or airpods max',
+            description: 'AirPods modelis, vai nu AirPods, AirPods Pro, vai AirPods Max',
           },
         },
         required: ['model'],
@@ -22,7 +22,7 @@ const tools = [
         properties: {
           stock: {
             type: 'integer',
-            description: 'An integer containing how many of the model are in currently in stock.'
+            description: 'Vesels skaitlis, kas norāda, cik daudz no šī modeļa pašlaik ir krājumā.'
           }
         }
       }
@@ -32,15 +32,15 @@ const tools = [
     type: 'function',
     function: {
       name: 'checkPrice',
-      say: 'Let me check the price, one moment.',
-      description: 'Check the price of given model of airpods, airpods pro or airpods max.',
+      say: 'Ļaujiet man pārbaudīt cenu, vienu brīdi.',
+      description: 'Pārbaudīt dotā AirPods, AirPods Pro vai AirPods Max modeļa cenu.',
       parameters: {
         type: 'object',
         properties: {
           model: {
             type: 'string',
             'enum': ['airpods', 'airpods pro', 'airpods max'],
-            description: 'The model of airpods, either the airpods, airpods pro or airpods max',
+            description: 'AirPods modelis, vai nu AirPods, AirPods Pro, vai AirPods Max',
           },
         },
         required: ['model'],
@@ -50,7 +50,7 @@ const tools = [
         properties: {
           price: {
             type: 'integer',
-            description: 'the price of the model'
+            description: 'Modeļa cena'
           }
         }
       }
@@ -60,19 +60,19 @@ const tools = [
     type: 'function',
     function: {
       name: 'placeOrder',
-      say: 'All right, I\'m just going to ring that up in our system.',
-      description: 'Places an order for a set of airpods.',
+      say: 'Labi, es tikai reģistrēšu to mūsu sistēmā.',
+      description: 'Veikt pasūtījumu AirPods komplektam.',
       parameters: {
         type: 'object',
         properties: {
           model: {
             type: 'string',
             'enum': ['airpods', 'airpods pro'],
-            description: 'The model of airpods, either the regular or pro',
+            description: 'AirPods modelis, vai nu parastais vai Pro',
           },
           quantity: {
             type: 'integer',
-            description: 'The number of airpods they want to order',
+            description: 'AirPods skaits, ko viņi vēlas pasūtīt',
           },
         },
         required: ['type', 'quantity'],
@@ -82,11 +82,11 @@ const tools = [
         properties: {
           price: {
             type: 'integer',
-            description: 'The total price of the order including tax'
+            description: 'Kopējā pasūtījuma cena, ieskaitot nodokli'
           },
           orderNumber: {
             type: 'integer',
-            description: 'The order number associated with the order.'
+            description: 'Pasūtījuma numurs, kas saistīts ar šo pasūtījumu'
           }
         }
       }
@@ -96,14 +96,14 @@ const tools = [
     type: 'function',
     function: {
       name: 'transferCall',
-      say: 'One moment while I transfer your call.',
-      description: 'Transfers the customer to a live agent in case they request help from a real person.',
+      say: 'Vienu brīdi, kamēr es pārsūtīšu jūsu zvanu.',
+      description: 'Pārsūta klientu pie dzīva aģenta, ja viņi pieprasa palīdzību no īsta cilvēka.',
       parameters: {
         type: 'object',
         properties: {
           callSid: {
             type: 'string',
-            description: 'The unique identifier for the active phone call.',
+            description: 'Unikāls identifikators aktīvajam tālruņa zvanam.',
           },
         },
         required: ['callSid'],
@@ -113,7 +113,7 @@ const tools = [
         properties: {
           status: {
             type: 'string',
-            description: 'Whether or not the customer call was successfully transfered'
+            description: 'Vai klienta zvans tika veiksmīgi pārsūtīts vai ne'
           },
         }
       }

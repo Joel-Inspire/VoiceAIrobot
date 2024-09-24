@@ -12,6 +12,7 @@ class TranscriptionService extends EventEmitter {
       encoding: 'mulaw',
       sample_rate: '8000',
       model: 'nova-2',
+      language: 'lv',
       punctuate: true,
       interim_results: true,
       endpointing: 200,
