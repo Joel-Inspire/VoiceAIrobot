@@ -142,7 +142,7 @@ app.ws('/connection', (ws) => {
         console.log(`Twilio -> Media stream ${streamSid} ended.`.underline.red);
 
         for (const k in Object.keys(activeCalls)) {
-          if (activeCalls[k] == callSid){
+          if (activeCalls[k] && activeCalls[k].callSid == callSid) {
             delete activeCalls[k];
             return;
           }
