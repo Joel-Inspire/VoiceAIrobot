@@ -116,6 +116,15 @@ class GptService extends EventEmitter {
   getPhoneNumbers() {
     return { to: this.smsSendNumber, from: this.phoneNumber };
   }
+  // Store call SID from app.js
+  setCallSid(callSid) {
+    this.callSid = callSid;
+  }
+
+  // Retrieve call SID
+  getCallSid() {
+    return { callSid: this.callSid };
+  }
 
   log(message) {
     const timestamp = new Date().toISOString();
@@ -229,6 +238,11 @@ class GptService extends EventEmitter {
               const phoneNumbers = this.getPhoneNumbers();
               functionArgs = { ...functionArgs, ...phoneNumbers };
             }
+
+            // Inject callSid for call controls
+            if (toolCall.functionName === "endCall") {
+              functionArgs = { ...functionArgs, ...this.getCallSid() };
+            }
             const functionResponse = await functionToCall(functionArgs);
 
             function_call_result_message = {
@@ -337,7 +351,13 @@ class GptService extends EventEmitter {
         });
 
         // Emit the final response to the user
-        this.emit("gptreply", finalContent, true, interactionCount);
+        this.emit(
+          "gptreply",
+          finalContent,
+          true,
+          interactionCount,
+          finalContent
+        );
         return; // Exit after processing the tool call
       } else {
         // If no tool call is detected, emit the final completion response
@@ -347,7 +367,13 @@ class GptService extends EventEmitter {
             role: "assistant",
             content: finalResponse,
           });
-          this.emit("gptreply", finalResponse, true, interactionCount);
+          this.emit(
+            "gptreply",
+            finalResponse,
+            true,
+            interactionCount,
+            finalResponse
+          );
         }
       }
     } catch (error) {

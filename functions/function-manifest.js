@@ -2,6 +2,20 @@ const tools = [
   {
     type: "function",
     function: {
+      name: "endCall",
+      description:
+        "Ends the call by hanging up when the user explicitly requests it or when the conversation has naturally concluded with no further actions required.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
+    },
+  },
+
+  {
+    type: "function",
+    function: {
       name: "liveAgentHandoff",
       description:
         "Initiates a handoff to a live agent based on user request or sensitive topics.",
@@ -101,7 +115,7 @@ const tools = [
           date: {
             type: "string",
             description:
-              "The date the user wants to schedule the tour for (YYYY-MM-DD).",
+              "The date the user wants to schedule the tour for (YYYY-MM-DD). **Convert any relative date expressions to this format based on {{currentDate}}.**",
           },
           time: {
             type: "string",
@@ -136,7 +150,7 @@ const tools = [
           date: {
             type: "string",
             description:
-              "The date the user wants to check for tour availability (YYYY-MM-DD).",
+              "The date the user wants to check for tour availability (YYYY-MM-DD). **Convert any relative date expressions to this format based on {{currentDate}}.**",
           },
           time: {
             type: "string",
@@ -171,7 +185,7 @@ const tools = [
           date: {
             type: "string",
             description:
-              "The move-in date the user prefers (optional, YYYY-MM-DD).",
+              "The move-in date the user prefers (optional, YYYY-MM-DD). **Convert any relative date expressions to this format based on {{currentDate}}.**",
           },
           budget: {
             type: "integer",

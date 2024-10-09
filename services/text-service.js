@@ -1,3 +1,5 @@
+// text-service.js
+
 const EventEmitter = require("events");
 
 class TextService extends EventEmitter {
@@ -6,8 +8,7 @@ class TextService extends EventEmitter {
     this.ws = websocket;
   }
 
-  sendText(text, last) {
-    console.log("[TextService] Sending text: ", text, last);
+  sendText(text, last, fullText = null) {
     this.ws.send(
       JSON.stringify({
         type: "text",
@@ -15,6 +16,9 @@ class TextService extends EventEmitter {
         last: last,
       })
     );
+    if (last && fullText) {
+      console.log("[TextService] Final Utterance:", fullText);
+    }
   }
 }
 

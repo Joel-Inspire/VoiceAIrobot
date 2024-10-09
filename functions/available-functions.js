@@ -1,6 +1,34 @@
 const mockDatabase = require("../data/mock-database");
 const twilio = require("twilio");
 
+// Send SMS using Twilio API
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const client = twilio(accountSid, authToken);
+
+// Call controls
+async function endCall(args) {
+  const { callSid } = args;
+  try {
+    setTimeout(async () => {
+      const call = await client.calls(callSid).update({
+        twiml: "<Response><Hangup></Hangup></Response>",
+      });
+      console.log("Call ended for:", call.sid);
+    }, 3000);
+    return {
+      status: "success",
+      message: `Call has ended`,
+    };
+  } catch (error) {
+    console.error("Twilio end error: ", error);
+    return {
+      status: "error",
+      message: `An error occurred whilst trying to hangup`,
+    };
+  }
+}
+
 // Utility function to normalize various time formats to the database's 12-hour AM/PM format
 function normalizeTimeFormat(time) {
   // Check if time is already in the desired AM/PM format
@@ -83,11 +111,6 @@ async function sendAppointmentConfirmationSms(args) {
   const tourType =
     appointmentDetails.type === "in-person" ? "an in-person" : "a self-guided";
   const message = `Hi ${name}, your tour for a ${apartmentType} apartment at Parkview is confirmed for ${appointmentDetails.date} at ${appointmentDetails.time}. This will be ${tourType} tour. We'll be ready for your visit! Let us know if you have any questions.`;
-
-  // Send SMS using Twilio API
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const client = twilio(accountSid, authToken);
 
   try {
     const smsResponse = await client.messages.create({
@@ -408,6 +431,7 @@ async function listAvailableApartments(args) {
 
 // Export all functions
 module.exports = {
+  endCall,
   liveAgentHandoff,
   sendAppointmentConfirmationSms,
   scheduleTour,
