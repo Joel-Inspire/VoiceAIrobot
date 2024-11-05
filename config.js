@@ -24,5 +24,8 @@ cfg.callerId = process.env.TWILIO_CALLER_ID;
 cfg.apiKey = process.env.TWILIO_API_KEY;
 cfg.apiSecret = process.env.TWILIO_API_SECRET;
 
+cfg.ttsProvider = process.env.TTS_PROVIDER ?? "amazon";
+cfg.voiceModel = process.env.VOICE_MODEL ?? "aura-asteria-en";
+
 // Export configuration object
 module.exports = cfg;
