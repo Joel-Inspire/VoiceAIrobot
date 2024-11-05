@@ -19,8 +19,8 @@ const {
   handleDtmfInput,
 } = require("./functions/helper-functions");
 
-const app = express();
-ExpressWs(app);
+const { app } = ExpressWs(express());
+app.use(express.urlencoded({ extended: true })).use(express.json());
 
 app.post("/incoming", (req, res) => {
   console.log(`[App.js] Incoming call webhook`);
