@@ -27,7 +27,7 @@ cfg.apiKey = process.env.TWILIO_API_KEY;
 cfg.apiSecret = process.env.TWILIO_API_SECRET;
 
 cfg.ttsProvider = process.env.TTS_PROVIDER ?? "amazon";
-cfg.voice = process.env.VOICE_MODEL ?? "Danielle-Neural";
+cfg.ttsVoice = process.env.TTS_VOICE ?? "Danielle-Neural";
 
 // Export configuration object
 module.exports = cfg;
