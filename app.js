@@ -23,7 +23,7 @@ const { app } = ExpressWs(express());
 app.use(express.urlencoded({ extended: true })).use(express.json());
 
 app.post("/incoming", (req, res) => {
-  console.log(`[App.js] Incoming call webhook`);
+  console.log(`[App.js] Incoming call webhook, callSid ${req.body?.CallSid}`);
 
   try {
     // Build the response for Twilio's <Connect><ConversationRelay> verb
