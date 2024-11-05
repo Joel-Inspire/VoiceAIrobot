@@ -30,7 +30,7 @@ app.post("/incoming", (req, res) => {
     const response = `\
     <Response>
       <Connect action="https://voxray-6456.twil.io/live-agent-handoff">
-        <ConversationRelay url="wss://${process.env.SERVER}/sockets" ttsProvider="${cfg.ttsProvider}" voice="${cfg.ttsVoice}" dtmfDetection="true" interruptByDtmf="true" />
+        <ConversationRelay url="wss://${cfg.server}/sockets" ttsProvider="${cfg.ttsProvider}" voice="${cfg.ttsVoice}" dtmfDetection="true" interruptByDtmf="true" />
       </Connect>
     </Response>`;
 
