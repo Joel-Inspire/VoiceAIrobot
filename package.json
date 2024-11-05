@@ -4,8 +4,6 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "inbound": "node ./scripts/inbound-call.js",
-    "outbound": "node ./scripts/outbound-call.js",
     "test": "jest",
     "dev": "nodemon app.js",
     "start": "node app.js"
